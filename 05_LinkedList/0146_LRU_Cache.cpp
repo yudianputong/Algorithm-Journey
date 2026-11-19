@@ -4,7 +4,7 @@
  * @link https://leetcode.cn/problems/lru-cache/
  * 
  * @algorithm Hash Table + Doubly Linked List
- * @time_complexity O(1) - get 和 put 均为常数时间
+ * @time_complexity 平均 O(1) - get 和 put 使用哈希表查找
  * @space_complexity O(Capacity) - 存储 capacity 个键值对
  * 
  * @note 核心优化：
@@ -20,47 +20,42 @@ using namespace std;
 
 class LRUCache {
 private:
-    int cap;
-    // 存储 {key, value} 的双向链表
-    list<pair<int, int>> cache;
-    // key -> list 中对应节点的迭代器
-    unordered_map<int, list<pair<int, int>>::iterator> m;
+    // 链表头是最近使用的节点，尾部是最久未使用的节点。
+    list<pair<int, int>> ls;
+    // key -> 链表中对应节点的迭代器
+    unordered_map<int, list<pair<int, int>>::iterator> mp;
+    int capacity;
 
 public:
-    LRUCache(int capacity) : cap(capacity) {}
+    LRUCache(int capacity) : capacity(capacity) {}
 
     int get(int key) {
-        auto it = m.find(key);
-        if (it == m.end()) return -1;
-
-        // 利用 splice 将节点移动到链表头部 (MRU)
-        // 参数：目标位置，源链表，待移动元素的迭代器
-        cache.splice(cache.begin(), cache, it->second);
-        
-        return it->second->second;
+        if (mp.count(key)) {
+            auto it = mp[key]; // 链表节点的迭代器
+            ls.splice(ls.begin(), ls, it);
+            return it->second; // 链表节点中的 value
+        } else {
+            return -1;
+        }
     }
 
     void put(int key, int value) {
-        auto it = m.find(key);
-        
-        // 1. 如果 key 已存在：更新值并移到头部
-        if (it != m.end()) {
-            it->second->second = value;
-            cache.splice(cache.begin(), cache, it->second);
-            return;
+        if (mp.count(key)) {
+            // 已存在：更新值并移到头部
+            auto it = mp[key];
+            it->second = value;
+            ls.splice(ls.begin(), ls, it);
+        } else {
+            // 已满：删除链表尾节点及 map 中对应的索引
+            if (mp.size() >= capacity) {
+                auto last = ls.back(); // 复制尾节点的 {key, value}
+                ls.pop_back();
+                mp.erase(last.first);
+            }
+            // 新节点放在头部，map 记录其位置
+            ls.push_front({key, value});
+            mp[key] = ls.begin();
         }
-
-        // 2. 如果 key 不存在：
-        // 2.1 如果容量满了，删除队尾最久未使用的元素 (LRU)
-        if (cache.size() == cap) {
-            int key_to_del = cache.back().first;
-            m.erase(key_to_del);
-            cache.pop_back();
-        }
-
-        // 2.2 插入新元素到头部，并记录其迭代器
-        cache.push_front({key, value});
-        m[key] = cache.begin();
     }
 };
 
