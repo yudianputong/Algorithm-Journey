@@ -1,8 +1,8 @@
 /**
  * @file 101_Symmetric_Tree.cpp
- * @algorithm 递归 DFS (镜像比较)
+ * @algorithm 队列 BFS (镜像比较)，附递归 DFS 参考
  * @time_complexity O(N)
- * @space_complexity O(H) - 系统栈深度
+ * @space_complexity O(N) - 队列最坏情况下需要存储 O(N) 个节点
  */
 
 struct TreeNode {
@@ -34,29 +34,26 @@ struct TreeNode {
 
 #include <queue>
 
-class Solution{
-
+class Solution {
 public:
-    bool isSymmetric(TreeNode* root)
-    {
-        if(!root) return true;
+    bool isSymmetric(TreeNode* root) {
+        if (root == nullptr) return true; // 空树对称
+
         std::queue<TreeNode*> q;
-        q.push(root->left);
+        q.push(root->left);               // 第一对：左子树与右子树
         q.push(root->right);
 
-        while(!q.empty())
-        {
-            TreeNode* u = q.front();
-            q.pop();
-            TreeNode* v = q.back();
-            q.pop();
-            
-            if(!u && !v) continue;
-            if(!u || !v || u->val != v->val) return false;
+        while (!q.empty()) {
+            TreeNode* u = q.front(); q.pop(); // 每次取出一对节点
+            TreeNode* v = q.front(); q.pop();
 
-            q.push(u->left);q.push(v->right);
-            q.push(u->right);q.push(v->left);
+            if (!u && !v) continue; // 两个都是空节点
+            if (!u || !v || u->val != v->val)
+                return false;       // 只有一个为空，或节点值不同
+
+            q.push(u->left);  q.push(v->right); // 外侧配对
+            q.push(u->right); q.push(v->left);  // 内侧配对
         }
-        return true; 
+        return true; // 所有节点对都匹配
     }
 };
