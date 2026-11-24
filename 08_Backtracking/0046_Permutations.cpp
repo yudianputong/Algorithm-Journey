@@ -9,6 +9,7 @@
  */
 
 #include <vector>
+#include <utility> // std::swap
 
 using namespace std;
 
@@ -51,5 +52,31 @@ private:
             path.pop_back();
             used[i] = false;
         }
+    }
+};
+
+// 方法二：交换回溯。提交此方法时，将类名改为 Solution。
+// [0, first) 的位置已经确定，[first, nums.size()) 是待选择的元素。
+class SolutionSwap {
+public:
+    vector<vector<int>> res;
+
+    void backtrack(vector<int>& nums, int first) {
+        if (first == static_cast<int>(nums.size())) {
+            res.push_back(nums); // 每个位置都已确定，保存一个排列
+            return;
+        }
+
+        for (int i = first; i < static_cast<int>(nums.size()); ++i) {
+            swap(nums[first], nums[i]); // 选择：让 nums[i] 放到当前位置
+            backtrack(nums, first + 1); // 继续确定下一个位置
+            swap(nums[first], nums[i]); // 撤销：恢复数组，尝试其他选择
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        res.clear(); // 同一个对象再次调用时，从空结果开始
+        backtrack(nums, 0);
+        return res;
     }
 };
