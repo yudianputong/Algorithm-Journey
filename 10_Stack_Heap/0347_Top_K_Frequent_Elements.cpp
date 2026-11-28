@@ -29,17 +29,20 @@ public:
             counts[num]++;
         }
 
-        // 2. 小顶堆：pair.first 是频率，pair.second 是元素
-        // 使用 greater 定义小顶堆，让最小频率排在 top
+        // 2. 堆中每项是 {元素, 频率}，与 counts 的顺序一致。
         using pii = pair<int, int>;
-        priority_queue<pii, vector<pii>, greater<pii>> pq;
+        // 比较 second（频率）：让频率较小的元素排在堆顶。
+        auto compare = [](const pii& a, const pii& b) {
+            return a.second > b.second;
+        };
+        priority_queue<pii, vector<pii>, decltype(compare)> pq(compare);
 
         for (auto const& [val, freq] : counts) {
             if (pq.size() < k) {
-                pq.push({freq, val});
-            } else if (freq > pq.top().first) {
+                pq.push({val, freq});
+            } else if (freq > pq.top().second) {
                 pq.pop();
-                pq.push({freq, val});
+                pq.push({val, freq});
             }
         }
 
@@ -47,7 +50,7 @@ public:
         vector<int> res;
         res.reserve(k);
         while (!pq.empty()) {
-            res.push_back(pq.top().second);
+            res.push_back(pq.top().first);
             pq.pop();
         }
         return res;
