@@ -1,56 +1,48 @@
 /**
- * @file 0394_Decode_String_Optimized.cpp
- * @brief 394. 字符串解码 (高性能优化版)
- * 
- * @algorithm Dual Stack + Memory Pre-allocation
- * @note 优化点：
- * 1. 精确的 reserve 尺寸计算，降低 allocator 压力。
- * 2. 深度利用移动语义 (Move Semantics)，消除不必要的堆拷贝。
- * 3. 逻辑分明，符合状态机处理规范。
+ * @file 0394_Decode_String.cpp
+ * @brief 394. 字符串解码
+ * @link https://leetcode.cn/problems/decode-string/
+ *
+ * @algorithm 用两个 vector 模拟栈，处理嵌套的括号
+ * outer 保存进入括号前的字符串，counts 保存对应的重复次数。
+ * 假设输入符合题目要求：括号匹配、数字后面跟着方括号。
  */
 
+#include <cctype>
 #include <string>
-#include <stack>
+#include <utility>
+#include <vector>
 
 using namespace std;
-
 
 class Solution {
 public:
     string decodeString(string s) {
-        string res = "";
-        int multi = 0;
-        stack<string> resStack;
-        stack<int> countStack;
+        vector<string> outer; // 每层括号前已解码的字符串
+        vector<int> counts;   // 每层括号对应的重复次数
+        string cur;           // 当前层正在构造的字符串
+        int num = 0;
 
-        for (char ch : s) {
-            if (ch == '[') {
-                resStack.push(std::move(res)); // 将当前 res 移入栈，避免拷贝
-                countStack.push(multi);
-                res = ""; // 重置为空串
-                multi = 0;
-            } else if (ch == ']') {
-                int curMulti = countStack.top();
-                countStack.pop();
-                string lastRes = std::move(resStack.top());
-                resStack.pop();
-
-                // 核心优化 1：精确计算长度
-                string tmp;
-                tmp.reserve(res.size() * curMulti); 
-                for (int i = 0; i < curMulti; ++i) {
-                    tmp.append(res);
+        for (char c : s) {
+            if (isdigit(static_cast<unsigned char>(c))) {
+                num = num * 10 + (c - '0'); // 处理多位数，例如 12
+            } else if (c == '[') {
+                outer.push_back(cur); // 保存当前层
+                counts.push_back(num);
+                cur.clear();          // 开始处理括号内的内容
+                num = 0;
+            } else if (c == ']') {
+                string& prefix = outer.back();
+                for (int k = counts.back(); k > 0; --k) {
+                    prefix += cur; // 把括号内的内容追加指定次数
                 }
-                
-                // 核心优化 2：原地追加并移动，彻底消除冗余对象
-                lastRes.append(std::move(tmp));
-                res = std::move(lastRes);
-            } else if (isdigit(ch)) {
-                multi = multi * 10 + (ch - '0');
+                cur = move(prefix); // 回到上一层，得到拼接后的字符串
+                outer.pop_back();   // 当前括号已处理完，两边都要出栈
+                counts.pop_back();
             } else {
-                res += ch;
+                cur.push_back(c);
             }
         }
-        return res;
+        return cur;
     }
 };
